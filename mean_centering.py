@@ -1,0 +1,1 @@
+mean_vector = df.mean(axis=1)
