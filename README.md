@@ -12,16 +12,22 @@ To-do
   
   --Glenn
   
--Training-Test split
+-Training-Test split & Make function to test several different methods (or pick one (You can implement the classifier inside) inside of loop where you do all the training (e.g. Random forest, PLS-DA, etc.))
 
--Make function to test several different methods (or pick one (You can implement the classifier inside) inside of loop where you do all the training (e.g. Random forest, PLS-DA, etc.))
-
-  --Maartje
+  --Maartje & Silke
   
 -Cross validation on training set
 
 -Make options for different scaling options (autoscaling, paretoscaling, meancentering, NONE)
 
--Look over pull requests and merge branches
+--Ayesha
+--Glenn
+
+-Look over pull requests and merge branches (Review)
+
+--Maartje & Silke
+--Ayesha & Glenn
 
 -Check that everything works
+
+--Theodoros
