@@ -4,19 +4,19 @@ To-do
 
 -Add Maartje and Silke to the repository
 
-  -Theodoros
+  --Theodoros
   
 -Finish up scaling options from last week
 
-  -Ayesha
+  --Ayesha
   
-  -Glenn
+  --Glenn
   
 -Training-Test split
 
 -Make function to test several different methods (or pick one (You can implement the classifier inside) inside of loop where you do all the training (e.g. Random forest, PLS-DA, etc.))
 
-  -Maartje
+  --Maartje
   
 -Cross validation on training set
 
