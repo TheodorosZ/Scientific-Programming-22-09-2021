@@ -84,9 +84,9 @@ os.chdir(r'C:\Users\maart\OneDrive\Academic\MSB1015 - Scientific Programming\Sci
 
 ### 0.2.3 load  the data ###
 #data = loadmat('Dataset1.mat') #ML version
-X = pd.read_excel(r'Data_tocheck.xlsx')
+X = pd.read_excel(r'Data_tocheck.xlsx', header=None)
 # define labels
-y = np.asarray([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1])
+y = np.asarray([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1])
 
 #%% 
 # =============================================================================
@@ -99,10 +99,13 @@ print(X.shape, y.shape)
     # The datalabels are 1 (class1) and -1 (class2).
     # Therefore the closer the sum is to zero, the better the balance between the classes
 group_diff = sum(y)
-n_class1 = 25 + group_diff/2   
-n_class2 =  25 - group_diff/2
+
 print("Data inspection: There are {} less class 1 samples than class 2 samples.".format(-1*group_diff))
-print("Data inspection: Thus, {} out of 50 samples are class 1 ({}%), and {} are controls ({}%)".format(n_class1, n_class1*2, n_class2, n_class2*2))
+'''this part only checks out for 50 samples, but there are 49
+# n_class1 = 25 + group_diff/2   
+# n_class2 =  25 - group_diff/2
+# print("Data inspection: Thus, {} out of 50 samples are class 1 ({}%), and {} are controls ({}%)".format(n_class1, n_class1*2, n_class2, n_class2*2))
+'''
 #%% 
 # =============================================================================
 # ##### 2. DATA PREPERATION ##### 

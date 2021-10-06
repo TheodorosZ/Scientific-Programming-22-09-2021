@@ -45,9 +45,9 @@ def Clf_pipeKbest(Clf, ParaGrid, CV_outer, CV_inner, Refit, X, y, scaletype):
 # =============================================================================
 #         ## Evaluate model on the hold out dataset ##
 # =============================================================================
-
+        scaleMethod = scaletype
         # standardize data
-        scaler = defScale(X_train_unscaled, X_test_unscaled, scaletype)
+        scaler = defScale(X_train_unscaled, X_test_unscaled, scaleMethod)
         # unpack output tuple
         (scaled_Xtrain, scaled_Xtest) = scaler
         
