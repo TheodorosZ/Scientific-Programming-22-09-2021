@@ -98,10 +98,10 @@ print(X.shape, y.shape)
     # The datalabels are 1 (class1) and -1 (class2).
     # Therefore the closer the sum is to zero, the better the balance between the classes
 group_diff = sum(y)
-n_class1 = 100 + group_diff/2   
-n_class2 =  100 - group_diff/2
-print("Data inspection: There are ", *group_diff, " more class 1 samples than class 2 samples.")
-print("Data inspection: Thus,", *n_class1, " out of 50 samples are patients (", *n_class2/2, "%), and ", *n_class2, " are controls (", *n_class2/2, "%)")
+n_class1 = 25 + group_diff/2   
+n_class2 =  25 - group_diff/2
+print("Data inspection: There are {} less class 1 samples than class 2 samples.".format(-1*group_diff))
+print("Data inspection: Thus, {} out of 50 samples are class 1 ({}%), and {} are controls ({}%)".format(n_class1, n_class1*2, n_class2, n_class2*2))
 #%% 
 # =============================================================================
 # ##### 2. DATA PREPERATION ##### 
