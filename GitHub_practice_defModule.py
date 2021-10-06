@@ -7,17 +7,19 @@ Created on Wed Oct  6 11:11:08 2021
 import pandas as pd
 import numpy as np
 
-def scale_meanC(X):
-    data = X
+def scale_meanC(Xtrain, Xtest):
+    data = Xtrain
     mean_vector = data.mean(axis=1)
     
     print(data.shape())
     
     mean_centered_data = np.divide(data, mean_vector)
-    return mean_centered_data
     
-def scale_pareto(X):
-    data = X
+    mean_centered_test = np.divide(Xtest, mean_vector)
+    return mean_centered_data, mean_centered_test
+    
+def scale_pareto(Xtrain, Xtest):
+    data = Xtrain
     mean_vector = data.mean(axis=0)
     mean_centering = np.divide(data, mean_vector)
     
@@ -27,16 +29,25 @@ def scale_pareto(X):
     
     # paretoscaling
     scaled_data = np.divide(mean_centering, root_std)
-    return scaled_data
+    
+    # test data
+    mean_centered_test = np.divide(Xtest, mean_vector)
+    test_scaled_data = np.divide(mean_centered_test, root_std)
+    return scaled_data, test_scaled_data
 
-def scale_auto(X):
-    data = X
+def scale_auto(Xtrain, Xtest):
+    data = Xtrain
     mean_vector = data.mean(axis=0)
     mean_centering = np.divide(data, mean_vector)
     
     # calculate std
     std_vector = np.std(data, axis=0)
     
-    # paretoscaling
+    # autoscaling
     scaled_data = np.divide(mean_centering, std_vector)
-    return scaled_data
+    
+    # test data
+    mean_centered_test = np.divide(Xtest, mean_vector)
+    test_scaled_data = np.divide(mean_centered_test, std_vector)
+    
+    return scaled_data, test_scaled_data

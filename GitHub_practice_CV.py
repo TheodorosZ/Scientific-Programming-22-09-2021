@@ -73,7 +73,8 @@ print(platform.python_version())
 #EXAMPLE:sys.path.append(r'C:\Users\username\Documents\Machine Learning Algorithms\MSB1011ClassifierKoot')
 sys.path.append(r'C:\Users\maart\OneDrive\Academic\MSB1015 - Scientific Programming\Scientific-Programming-22-09-2021')
 # load
-from GitHub_practice_defModule import scale_meanC, scale_pareto, scale_auto
+# from GitHub_practice_defModuleTEST import scale_meanC, scale_pareto, scale_auto
+from GitHub_practice_defModuleTEST import defScale
 from GitHub_practice_nestedCV_KfeatKoot import Clf_pipeKbest
 
 ### 0.2.2 set the directory to load the data ###
@@ -111,7 +112,7 @@ y = np.where(y!=1, 0, y)
 y = y.ravel()
 #%%
 # =============================================================================
-# ##### 3 MODEL PARAMETER AND FEATURE SELECTION #####
+# ##### 3 MODEL PARAMETER SELECTION #####
 # =============================================================================
 ### 3.1 initialize classifiers ###
 # seperately for each pipeline
@@ -123,7 +124,7 @@ CLFlr = LogisticRegression(random_state = 23, n_jobs = -1)
 # =============================================================================
 ## 3.2.1 initialize cross-validation K folds ##
 cv_outer =  StratifiedKFold(n_splits=5, shuffle=True, random_state=23) # returns 5 stratified folds
-cv_inner = StratifiedKFold(n_splits=4, shuffle=True, random_state=23) # returns 4 stratified folds
+cv_inner = StratifiedKFold(n_splits=2, shuffle=True, random_state=23) # returns 2 stratified folds
 
 ## 3.2.2 initialize paramater grid to search for the best regulatization parameter C
 param_svc = {'C': [.0001, .001, .005, .01, .1, .5, 1],
@@ -139,16 +140,17 @@ results_SVC = Clf_pipeKbest(Clf = CLFsvc,
                             CV_outer = cv_outer, 
                             CV_inner = cv_inner, 
                             X = X, 
-                            y = y, 
-                            Kfeat = 'all') 
+                            y = y,
+                            scaletype = 'mean-center') 
 
 results_LR = Clf_pipeKbest(Clf = CLFlr, 
                            ParaGrid = param_lr, 
                            Refit = 'Accuracy', # consider another classification perfomance parameter, because the data is not balanced
                            CV_outer = cv_outer, 
                            CV_inner = cv_inner, 
-                           X = X, y = y, 
-                           Kfeat = 'all') 
+                           X = X, 
+                           y = y,
+                           scaletype = 'mean-center') 
 #%%
 '''
 ## =============================================================================
