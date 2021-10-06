@@ -1,24 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Oct  6 10:31:54 2021
-
-@author: maart
-"""
-# -*- coding: utf-8 -*-
-"""
-Created on Sun May 30 15:40:06 2021
-
-Machine Learning and Multivariate Statistics MSB1011
-
-Script Final Assignment 2021
-
+Script GitHub practice 
+Scientific Programming 2021 (MSB1015)
 Author: MEA Koot
 StudentID: I6084689
 
 This script accompanies the MSB1011 Classication report: 
     MSB1011_ML_classification_report_Koot_i6084689
 
-This The script is created and run with Python version 3.7.3 
+This The script is created and run with Python version 3.8 
 in the free and open source ‘Scientific Python Development Environment’ 
 (Spyder), accessed through Anaconda 3.0
 
@@ -55,7 +45,6 @@ print(platform.python_version())
        nestedCV_KfeatKoot, best_modelKoot, and final_modelKoot
    2. At step 0.2.2, on line *** set directory to the FOLDER where the datafile(s) are stored
    3. At step 0.2.3, on line ***, between the quotation marks in 
-
    ext_labels = loadmat(''), insert the filename of the file that contains the labels 
    for the otherwise unlabeled set (called XValidation in this script).
    This should be a matlab file and the filename should end with .mat
@@ -84,54 +73,35 @@ print(platform.python_version())
 #EXAMPLE:sys.path.append(r'C:\Users\username\Documents\Machine Learning Algorithms\MSB1011ClassifierKoot')
 sys.path.append(r'C:\Users\maart\OneDrive\Academic\MSB1015 - Scientific Programming\Scientific-Programming-22-09-2021')
 # load
-from nestedCV_KfeatKoot import Clf_pipeKbest
-from best_modelKoot import BestModel_pipe
-from trainbest_classifier_modelKoot import train_bestClfpipe
-from final_prediction_classifier_modelKoot import final_predictionClf
+from GitHub_practice_defModule import scale_meanC, scale_pareto, scale_auto
+from GitHub_practice_nestedCV_KfeatKoot import Clf_pipeKbest
+
 ### 0.2.2 set the directory to load the data ###
 #os.chdir(r'')
 #EXAMPLE: os.chdir(r'C:\Users\username\Documents\Machine Learning Algorithms\MSB1011ClassifierKoot\Data')
-os.chdir(r'C:\Users\maart\OneDrive\Academic\Completed\P5 Machine Learning and Multivariate statistics MSB1011\Assignment\MSB1011ClassifierKoot\Data')
-
-# check if directory is set properly
-cwd = os.getcwd()
-print(cwd) 
+os.chdir(r'C:\Users\maart\OneDrive\Academic\MSB1015 - Scientific Programming\Scientific-Programming-22-09-2021')
 
 ### 0.2.3 load  the data ###
-data = loadmat('Dataset1.mat')
-#ext_labels = loadmat('')
-
-### 0.2.4 Prepare the data ###
-# set gene expression and subject label variables
-X = data['X'] # the data
-y = data['c'] # the labels
-XValidation = data['Xtest'] # the unlabeled test data is not used until the last step
-#yValidation = 
+#data = loadmat('Dataset1.mat') #ML version
+X = pd.read_excel(r'Data_tocheck.xlsx')
+# define labels
+y = np.asarray([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1])
 
 #%% 
 # =============================================================================
 # ##### 1. INSPECT DATA #####
 # =============================================================================
 ### 1.1 check the shape of the expression data and labels ###
-print(X.shape, y.shape, XValidation.shape)
+print(X.shape, y.shape)
     
 ### 1.2 Sum labels to check the balance in the distribution of the target classes ###
-    # The datalabels are 1 (patients) and -1 (controls).
+    # The datalabels are 1 (class1) and -1 (class2).
     # Therefore the closer the sum is to zero, the better the balance between the classes
 group_diff = sum(y)
-n_patients = 100 + group_diff/2   
-n_controls =  100 - group_diff/2
-print("Data inspection: There are ", *group_diff, " more patient samples than control samples.")
-print("Data inspection: Thus,", *n_patients, " out of 200 samples are patients (", *n_patients/2, "%), and ", *n_controls, " are controls (", *n_controls/2, "%)")
-"""
-# =============================================================================
-# # The patients and the controls make up 55% and 45% of the total, respectively. 
-# # This distribution doesn't so a large imbalance, so a readom train-test split 
-# # would propbably not create major issues. 
-# # However, since it is  not perfectly balanced a stratified split is prefered 
-# # to ensure that relative class frequencies are preserved in the both the train and test set.
-# =============================================================================
-# """
+n_class1 = 100 + group_diff/2   
+n_class2 =  100 - group_diff/2
+print("Data inspection: There are ", *group_diff, " more class 1 samples than class 2 samples.")
+print("Data inspection: Thus,", *n_class1, " out of 50 samples are patients (", *n_class2/2, "%), and ", *n_class2, " are controls (", *n_class2/2, "%)")
 #%% 
 # =============================================================================
 # ##### 2. DATA PREPERATION ##### 
@@ -145,18 +115,8 @@ y = y.ravel()
 # =============================================================================
 ### 3.1 initialize classifiers ###
 # seperately for each pipeline
-svc400 =   SVC(random_state = 23, probability = True, kernel = 'linear')  
-lr400 = LogisticRegression(random_state = 23, n_jobs = -1)
-
-svc300 =   SVC(random_state = 23, probability = True, kernel = 'linear')  
-lr300 = LogisticRegression(random_state = 23, n_jobs = -1)
-
-svc200 =   SVC(random_state = 23, probability = True, kernel = 'linear')  
-lr200 = LogisticRegression(random_state = 23, n_jobs = -1)
-
-svc100 =   SVC(random_state = 23, probability = True, kernel = 'linear')  
-lr100 = LogisticRegression(random_state = 23, n_jobs = -1)
-
+CLFsvc =   SVC(random_state = 23, probability = True, kernel = 'linear')  
+CLFlr = LogisticRegression(random_state = 23, n_jobs = -1)
 
 # =============================================================================
 # #### 3.2 Classifier pipeline with hyperparameter C optimization ####    
@@ -173,72 +133,24 @@ param_lr = {'C': [.0001, .001, .005, .01, .1, .5, 1]
             }
 #%%
 ### 3.2.3 Run nested CV pipelines for all features ###
-results_SVC400 = Clf_pipeKbest(Clf = svc400, 
-                               ParaGrid = param_svc, 
-                               Refit = 'Accuracy', 
-                               CV_outer = cv_outer, 
-                               CV_inner = cv_inner, 
-                               X = X, 
-                               y = y, 
-                               Kfeat = 'all') 
-results_LR400 = Clf_pipeKbest(Clf = lr400, 
-                              ParaGrid = param_lr, 
-                              Refit = 'Accuracy', 
-                              CV_outer = cv_outer, 
-                              CV_inner = cv_inner, 
-                              X = X, y = y, 
-                              Kfeat = 'all') 
+results_SVC = Clf_pipeKbest(Clf = CLFsvc, 
+                            ParaGrid = param_svc, 
+                            Refit = 'Accuracy', # consider another classification perfomance parameter, because the data is not balanced
+                            CV_outer = cv_outer, 
+                            CV_inner = cv_inner, 
+                            X = X, 
+                            y = y, 
+                            Kfeat = 'all') 
+
+results_LR = Clf_pipeKbest(Clf = CLFlr, 
+                           ParaGrid = param_lr, 
+                           Refit = 'Accuracy', # consider another classification perfomance parameter, because the data is not balanced
+                           CV_outer = cv_outer, 
+                           CV_inner = cv_inner, 
+                           X = X, y = y, 
+                           Kfeat = 'all') 
 #%%
-### 3.2.3 Run nested CV pipelines for the 300 best features ###
-results_SVC300 = Clf_pipeKbest(Clf = svc300, 
-                               ParaGrid = param_svc, 
-                               Refit = 'Accuracy', 
-                               CV_outer = cv_outer, 
-                               CV_inner = cv_inner, 
-                               X = X, y = y, 
-                               Kfeat = 300) 
-results_LR300 = Clf_pipeKbest(Clf = lr300, 
-                              ParaGrid = param_lr, 
-                              Refit = 'Accuracy', 
-                              CV_outer = cv_outer, 
-                              CV_inner = cv_inner, 
-                              X = X, 
-                              y = y,  
-                              Kfeat = 300)
-#%%
-### 3.2.3 Run nested CV pipelines for the 200 best features ###
-results_SVC200 = Clf_pipeKbest(Clf = svc200, 
-                               ParaGrid = param_svc, 
-                               Refit = 'Accuracy', 
-                               CV_outer = cv_outer, 
-                               CV_inner = cv_inner, 
-                               X = X, 
-                               y = y,  
-                               Kfeat = 200) 
-results_LR200 = Clf_pipeKbest(Clf = lr200, 
-                              ParaGrid = param_lr, 
-                              Refit = 'Accuracy', 
-                              CV_outer = cv_outer, 
-                              CV_inner = cv_inner, X = X, y = y,  Kfeat = 200)
-#%%
-### 3.2.3 Run nested CV pipelines for the 100 best features ###
-results_SVC100 = Clf_pipeKbest(Clf = svc100, 
-                               ParaGrid = param_svc, 
-                               Refit = 'Accuracy', 
-                               CV_outer = cv_outer, 
-                               CV_inner = cv_inner, 
-                               X = X, 
-                               y = y,  
-                               Kfeat = 100) 
-results_LR100 = Clf_pipeKbest(Clf = lr100, 
-                              ParaGrid = param_lr, 
-                              Refit = 'Accuracy', 
-                              CV_outer = cv_outer, 
-                              CV_inner = cv_inner, 
-                              X = X, 
-                              y = y,  
-                              Kfeat = 100)
-#%%
+'''
 ## =============================================================================
 ## #### 4. NESTED CROSS-VALIDATION RESULTS ####
 ## =============================================================================
@@ -364,3 +276,4 @@ finalResults = final_predictionClf(final_clf = finalCLF,
 
 print('Accuracy of the classifier on the final validation data =%.3f' % (finalResults['accuracy']))
 
+'''
