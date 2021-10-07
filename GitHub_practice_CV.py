@@ -23,14 +23,15 @@ import platform
 import sys 
 import pandas as pd
 import numpy as np 
-import matplotlib.pyplot as plt
-import seaborn as sns
 import os
-from scipy.io import loadmat
-from sklearn.model_selection import StratifiedKFold
-from sklearn.linear_model import LogisticRegression 
 from sklearn.svm import SVC
-
+from sklearn.metrics import accuracy_score
+# import matplotlib.pyplot as plt
+# import seaborn as sns
+# from scipy.io import loadmat
+# from sklearn.model_selection import StratifiedKFold
+# from sklearn.linear_model import LogisticRegression
+# from sklearn.model_selection import train_test_split
 # Check Python version
 print(platform.python_version()) 
 #%% 
@@ -73,9 +74,7 @@ print(platform.python_version())
 #EXAMPLE:sys.path.append(r'C:\Users\username\Documents\Machine Learning Algorithms\MSB1011ClassifierKoot')
 sys.path.append(r'C:\Users\maart\OneDrive\Academic\MSB1015 - Scientific Programming\Scientific-Programming-22-09-2021')
 # load
-# from GitHub_practice_defModuleTEST import scale_meanC, scale_pareto, scale_auto
-from GitHub_practice_defModuleTEST import defScale
-from GitHub_practice_nestedCV_KfeatKoot import Clf_pipeKbest
+from GitHub_practice_defModule import statKfold, scale_meanC, scale_pareto, scale_auto
 
 ### 0.2.2 set the directory to load the data ###
 #os.chdir(r'')
@@ -100,12 +99,11 @@ print(X.shape, y.shape)
     # Therefore the closer the sum is to zero, the better the balance between the classes
 group_diff = sum(y)
 
+n_class1 = len(X)/2 + group_diff/2   
+n_class2 =  len(X)/2 - group_diff/2
+
 print("Data inspection: There are {} less class 1 samples than class 2 samples.".format(-1*group_diff))
-'''this part only checks out for 50 samples, but there are 49
-# n_class1 = 25 + group_diff/2   
-# n_class2 =  25 - group_diff/2
-# print("Data inspection: Thus, {} out of 50 samples are class 1 ({}%), and {} are controls ({}%)".format(n_class1, n_class1*2, n_class2, n_class2*2))
-'''
+print("Data inspection: Thus, {} out of 50 samples are class 1 ({}%), and {} are controls ({}%)".format(n_class1, n_class1*2, n_class2, n_class2*2))
 #%% 
 # =============================================================================
 # ##### 2. DATA PREPERATION ##### 
@@ -113,172 +111,87 @@ print("Data inspection: There are {} less class 1 samples than class 2 samples."
 ### 2.1 Change the the control labels from -1 to 0 for easier handling of data ###
 y = np.where(y!=1, 0, y)
 y = y.ravel()
-#%%
+
+
+NfoldOuter = 4
+# call split funtion to make outer splits
+outerSplit = statKfold(X, y, NfoldOuter)
+(dictTrainOut, dictTestOut, dictTrainlabelsOut, dictTestlabelsOut) = outerSplit
+
+
+### 2.3 Inner cross validation splits ###
+NfoldInner = 3
+dictCVtrainAllinn= {}
+dictCVtestAllinn= {}
+dictCVtrainAllLabelsinn= {}
+dictCVtestAllLabelsinn= {}
+dictCVfolds = {}
+for Outerfold in range(NfoldOuter):
+    # call split function to make inner splits in each outer test set
+    innerSplit = statKfold(dictTrainOut[Outerfold], dictTrainlabelsOut[Outerfold], NfoldInner)
+    (dictTrainInner, dictTestInner, dictTrainlabelsInner, dictTestlabelsInner) = innerSplit
+    dictCVfolds[Outerfold] = innerSplit
+    dictCVtrainAllinn[Outerfold]= dictTrainInner
+    dictCVtestAllinn[Outerfold]= dictTestInner
+    dictCVtrainAllLabelsinn[Outerfold]= dictTrainlabelsInner
+    dictCVtestAllLabelsinn[Outerfold]= dictTestlabelsInner
+
+#%%   
 # =============================================================================
-# ##### 3 MODEL PARAMETER SELECTION #####
+# ##### 3. APPLY SCALING AND SET UP AND RUN THE MODEL #####
 # =============================================================================
-### 3.1 initialize classifiers ###
-# seperately for each pipeline
-CLFsvc =   SVC(random_state = 23, probability = True, kernel = 'linear')  
-CLFlr = LogisticRegression(random_state = 23, n_jobs = -1)
+### 3.0 initialize classifiers ###
+# Support Vector Machine  (aka Support Vector CLassifier)
+CLFsvc = SVC(C = 0.001, random_state = 23, probability = True, kernel = 'linear')  
+'''Note that this specific type of classiciation and the paramater values/types choosen here 
+are not chosen based on a proper rationale (or let alone a grid search, 
+because that would be implemented within the inner cross validation fold). 
+We just picked something to use for this excercise.'''
 
-# =============================================================================
-# #### 3.2 Classifier pipeline with hyperparameter C optimization ####    
-# =============================================================================
-## 3.2.1 initialize cross-validation K folds ##
-cv_outer =  StratifiedKFold(n_splits=5, shuffle=True, random_state=23) # returns 5 stratified folds
-cv_inner = StratifiedKFold(n_splits=2, shuffle=True, random_state=23) # returns 2 stratified folds
+dictCVaccMC  = {}
+dictCVaccPareto  = {}
+dictCVaccAuto  = {}
+for outerFold in range(NfoldOuter): 
+    nested_scoresMC = list()
+    nested_scoresPareto = list()
+    nested_scoresAuto = list()
+    for innerFold in range(NfoldInner):
+        X_train = dictCVfolds[outerFold][0][innerFold]
+        X_test = dictCVfolds[outerFold][1][innerFold]
+        y_train = dictCVfolds[outerFold][2][innerFold]
+        y_test = dictCVfolds[outerFold][3][innerFold]
+        
+        ### 3.1 inner CV train on mean-centered data ### 
+        resultMC = scale_meanC(X_train, X_test)
+        (trainMC, testMC) = resultMC
+        CLFfit = CLFsvc.fit(trainMC, y_train)
+        y_pred = CLFfit.predict(testMC)
+        # evaluate the model
+        Acc = accuracy_score(y_test, y_pred)
+        # store the result
+        nested_scoresMC.append(Acc)
+        #perfomance = modelfit.best_score_
+        
+        ### 3.2 inner CV train on pareto scaled data ### 
+        resultPareto = scale_pareto(X_train, X_test)
+        (trainPareto, testPareto) = resultPareto
+        CLFfit = CLFsvc.fit(trainPareto, y_train)
+        y_pred = CLFfit.predict(testPareto)
+        # evaluate the model
+        Acc = accuracy_score(y_test, y_pred)
+        # store the result
+        nested_scoresPareto.append(Acc)
+        ### 3.3 inner CV train on auto-scaled data ### 
+        resultAuto = scale_auto(X_train, X_test)
+        (trainAuto, testAuto) = resultAuto
+        CLFfit = CLFsvc.fit(trainAuto, y_train)
+        y_pred = CLFfit.predict(testAuto)
+        # evaluate the model
+        Acc = accuracy_score(y_test, y_pred)
+        # store the result
+        nested_scoresAuto.append(Acc)
+        
+    dictCVaccMC[outerFold] = nested_scoresMC
+    dictCVaccPareto[outerFold] = nested_scoresPareto
+    dictCVaccAuto[outerFold] = nested_scoresAuto
 
-## 3.2.2 initialize paramater grid to search for the best regulatization parameter C
-param_svc = {'C': [.0001, .001, .005, .01, .1, .5, 1],
-
-             } 
-param_lr = {'C': [.0001, .001, .005, .01, .1, .5, 1]
-            }
-#%%
-### 3.2.3 Run nested CV pipelines for all features ###
-results_SVC = Clf_pipeKbest(Clf = CLFsvc, 
-                            ParaGrid = param_svc, 
-                            Refit = 'Accuracy', # consider another classification perfomance parameter, because the data is not balanced
-                            CV_outer = cv_outer, 
-                            CV_inner = cv_inner, 
-                            X = X, 
-                            y = y,
-                            scaletype = 'mean-center') 
-
-results_LR = Clf_pipeKbest(Clf = CLFlr, 
-                           ParaGrid = param_lr, 
-                           Refit = 'Accuracy', # consider another classification perfomance parameter, because the data is not balanced
-                           CV_outer = cv_outer, 
-                           CV_inner = cv_inner, 
-                           X = X, 
-                           y = y,
-                           scaletype = 'mean-center') 
-#%%
-'''
-## =============================================================================
-## #### 4. NESTED CROSS-VALIDATION RESULTS ####
-## =============================================================================
-
-# store accuracy scores in variables
-accSVC = [results_SVC400[1], results_SVC300[1], results_SVC200[1], results_SVC100[1]]
-accLR = [results_LR400[1], results_LR300[1], results_LR200[1], results_LR100[1]]
-
-# create variables with feature number to identify barcharts
-titles = ['SVC nested CV accuracy all features', 
-          'SVC nested CV accuracy 300 best features', 
-          'SVC nested CV accuracy 200 best features', 
-          'SVC nested CV accuracy 100 best features', 
-          'Log regression nested CV accuracy all features', 
-          'Log regression nested CV accuracy 300 best features', 
-          'Log regression nested CV accuracy 200 best features', 
-          'Log regression nested CV accuracy 100 best features']
-fold = ['fold 1','fold 2','fold 3','fold 4','fold 5']
-
-
-# set dictionary for barplot text style 
-font = {'family': 'sans-serif',
-        'color':  'black',
-        'weight': 'bold',
-        'size': 16,
-        }
-
-# loop over CV accuracy scores for different # best features
-figSVCcv = plt.figure(figsize=(20,10))
-for i in range(4):
-    score = accSVC[i]
-    mean  = np.mean(score)
-    sd = np.std(score)
-    sns.set(font_scale = 1.3)
-    plt.subplot(2,2,i+1)
-    ax = sns.barplot(fold, score)
-    ax.set_title(titles[i], fontsize=20)
-    ax.set_ylabel('outer accuracy for best model', fontsize=20)
-    ax.set_ylim(0,1)
-    ax.text(0.9, 0.9, str('mean accuracy: %.3f (SD=%.3f)' % (mean, sd)), fontdict=font)
-plt.show()
-
-figSVCcv.savefig('barplot_SVC_nestedCV_accuracy.png')  
-
-figLRcv = plt.figure(figsize=(20,10))
-for i in range(4):
-    score = accLR[i]
-    mean  = np.mean(score)
-    sd = np.std(score)
-    plt.subplot(2,2,i+1)
-    ax = sns.barplot(fold, score)
-    ax.set_title(titles[i+4], fontsize=20)
-    ax.set_ylabel('outer accuracy for best model', fontsize=20)
-    ax.set_ylim(0,1)
-    ax.text(0.9, 0.9, str('mean accuracy: %.3f (SD=%.3f)' % (mean, sd)), fontdict=font)
-plt.show()
-
-figLRcv.savefig('barplot_LR_nestedCV_accuracy.png')  
-
-# The mean accuracy is the highest for SVC on the 200 best features
-# On 3 out of 5 folds the value for the best C = 0.01
-print('SVC on 200 best features with C=0.01 is chosen as the best model.')
-#%%
-# =============================================================================
-# ##### 5. FIT THE BEST MODEL TO FULL OUTER SET #####
-# =============================================================================
-
-# 5.1 initialize best model 
-svc_best =  SVC(random_state = 23, probability = True, kernel = 'linear', C = 0.01)  
-
-# 5.2 set the stratified K-fold
-cv_validate = cv_outer
-# =============================================================================
-# #### 5.3 run the model through validation pipeline ####
-# =============================================================================
-result_bestCLF = BestModel_pipe(best_clf = svc_best, cv = cv_validate, X = X, y = y, Kfeat = 200)
-
-### 5.4 vizualize results ###
-score = result_bestCLF[0]
-meanfit  = np.mean(score)
-sdfit = np.std(score)
-print('The mean accuracy for the best model fit is %.3f (SD=%.3f)' % (meanfit, sdfit))
-print('Thus, the accuracy is exprected to lay around 0.725, the')
-figBESTCLF = plt.figure(figsize=(20,10))
-ax = sns.barplot(fold, score)
-ax.set_title('Accuracy best model outer fit (SVC, C=.01, Kbest = 200)', fontsize=20)
-ax.set_ylabel('accuracy for best model', fontsize=20)
-ax.set_ylim(0,1)
-ax.text(0.9, 0.9, str('mean accuracy: %.3f (SD=%.3f)' % (meanfit, sdfit)), fontdict=font)
-plt.show()
-
-figBESTCLF.savefig('barplot_SVC_best_model_on_outer_5fold.png')  
-#%% 
-# =============================================================================
-# ##### 6. APPLY MODEL TO UNLABELED DATA  #####
-# =============================================================================
-"""
-Note this step is redundant when the label for the otherwise unlabeled validation data are available 
-"""
-# 6.1 initialize best model 
-trainCLF =  SVC(random_state = 23, probability = True, kernel = 'linear', C = 0.01)  
-# 6.2 fit the best model with the final pipeline 
-resultFIT = train_bestClfpipe(clf = trainCLF,
-                              traindata = X, 
-                              labels = y, 
-                              unlabeled_data = XValidation, 
-                              Kfeat = 200)
-
-#%%
-# =============================================================================
-# ##### 7. LOAD LABELS FOR THE (UNTIL NOW) UNLABELED DATA AND APPLY AGAIN #####
-# =============================================================================
-yValidation = np.random.randint(2,size = 1000)
-
-# 7.1 initialize best model 
-finalCLF =  SVC(random_state = 23, probability = True, kernel = 'linear', C = 0.01)
-finalResults = final_predictionClf(final_clf = finalCLF, 
-                                   traindata = X, 
-                                   trainlabels = y, 
-                                   preddata = XValidation, 
-                                   predlabels = yValidation, 
-                                   Kfeat = 200)
-
-print('Accuracy of the classifier on the final validation data =%.3f' % (finalResults['accuracy']))
-
-'''
